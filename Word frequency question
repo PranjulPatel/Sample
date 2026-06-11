@@ -1,0 +1,77 @@
+📌 Problem Statement 
+You need to implement a Word Frequency Counter that takes a sentence as input and returns a dictionary where: 
+
+* Keys → Words 
+* Values → Word frequencies 
+The implementation should handle punctuation and case insensitivity. 
+
+📌 Class Declatration
+class WordFrequencyCounter: 
+📌 No need for init method
+📌 If used, follow recommendations -
+def __init__(self):
+pass
+￼
+ 
+
+📌 Operations 
+1. Clean and Tokenize Input 
+📌 Removes punctuation, converts the sentence to lowercase, and tokenizes words. 
+🔹 Function Prototype: 
+def preprocess_text(self, text: str) -> list: 
+
+🔹 Example Input: 
+preprocess_text("Hello, hello! How are you?") 
+🔹 Expected Output: 
+['hello', 'hello', 'how', 'are', 'you'] 
+
+🔹 Implementation Flow: 
+💡 Convert the input text to lowercase. 
+💡 Remove punctuation using re.sub(r'[^\w\s]', '', text) 
+💡 Split text into words using .split(). 
+￼
+ 
+2. Compute Word Frequency 
+📌 Counts occurrences of each word in a dictionary. 
+🔹 Function Prototype: 
+def compute_word_frequency(self, words: list) -> dict: 
+🔹 Example Input: 
+compute_word_frequency(['hello', 'hello', 'how', 'are', 'you']) 
+
+🔹 Expected Output: 
+{'hello': 2, 'how': 1, 'are': 1, 'you': 1} 
+🔹 Implementation Flow: 
+💡 Declare empty dictionary
+💡 Iterate through the list using for loop and use dictionary.get(word, 0) to count occurrences. 
+💡 Return a dictionary where keys = words and values = frequencies. 
+￼
+ 
+3. Get Most Frequent Word 
+📌 Returns the most frequent word and its count. 
+🔹 Function Prototype: 
+def get_most_frequent_word(self, freq_dict: dict) -> tuple: 
+🔹 Example Input: 
+get_most_frequent_word({'hello': 2, 'how': 1, 'are': 1, 'you': 1}) 
+
+🔹 Expected Output: 
+('hello', 2) 
+🔹 Implementation Flow: 
+💡 If nothing in dictionary, return None
+💡 Iterate through the dictionary to find the word with the highest count. Use max for highest.
+💡 Use lambda x:x[1] for mapping keys
+💡 Return the word and its count as a tuple. 
+￼
+ 
+
+4. Filter Words by Minimum Frequency 
+📌 Returns words that appear at least n times. 
+🔹 Function Prototype: 
+def filter_words_by_frequency(self, freq_dict: dict, n: int) -> dict: 
+
+🔹 Example Input: 
+filter_words_by_frequency({'hello': 2, 'how': 1, 'are': 1, 'you': 1}, 2) 
+🔹 Expected Output: 
+{'hello': 2} 
+🔹 Implementation Flow: 
+💡 If count > n, Iterate over the dictionary using for loop and include only words that meet or exceed the threshold & return a filtered dictionary
+💡 Else return empty dictionary
