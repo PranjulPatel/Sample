@@ -1,0 +1,117 @@
+import pandas as pd
+
+class EmployeeAttendanceAnalyzer:
+
+    # 1. Create Attendance DataFrame
+    def create_attendance_df(self, data: list) -> pd.DataFrame:
+        """
+        Converts raw attendance records into a structured DataFrame.
+        """
+        columns = ["EmployeeID", "Department", "Date", "AttendanceStatus"]
+        df = pd.DataFrame(data, columns=columns)
+        return df
+
+    # 2. Calculate Monthly Presence Rate
+    def monthly_presence_rate(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Calculates monthly presence rate for each employee.
+        Presence Rate = (Present Days / Total Days) * 100
+        """
+        # Extract month
+        df["Month"] = df["Date"].str[:7]
+
+        # Total days per employee per month
+        total_days = df.groupby(["EmployeeID", "Month"]).size().reset_index(name="TotalDays")
+
+        # Present days per employee per month
+        present_days = df[df["AttendanceStatus"] == "Present"].groupby(["EmployeeID", "Month"]).size().reset_index(name="PresentDays")
+
+        # Merge total and present counts
+        result = pd.merge(total_days, present_days, on=["EmployeeID", "Month"], how="left")
+        result["PresentDays"] = result["PresentDays"].fillna(0)
+
+        # Calculate presence rate
+        result["Presence Rate"] = (result["PresentDays"] / result["TotalDays"]) * 100
+        return result[["EmployeeID", "Month", "Presence Rate"]]
+
+    # 3. Add Absence Flag
+    def add_absence_flag(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Adds a flag column indicating if the attendance status was 'Absent'.
+        """
+        df["IsAbsent"] = (df["AttendanceStatus"] == "Absent").astype(int)
+        return df
+
+    # 4. Frequent Absentees
+    def frequent_absentees(self, df: pd.DataFrame, threshold: int) -> pd.DataFrame:
+        """
+        Returns employees with absence count greater than threshold.
+        """
+        absent_df = df[df["AttendanceStatus"] == "Absent"]
+        absence_count = absent_df.groupby("EmployeeID").size().reset_index(name="AbsenceCount")
+        frequent = absence_count[absence_count["AbsenceCount"] > threshold]
+        return frequent
+
+    # 5. Department Attendance Summary
+    def department_attendance_summary(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Returns department-wise summary of attendance statuses.
+        """
+        summary = pd.crosstab(df["Department"], df["AttendanceStatus"])
+
+        # Ensure all expected columns exist
+        for col in ["Present", "Absent", "Remote"]:
+            if col not in summary.columns:
+                summary[col] = 0
+
+        summary = summary[["Present", "Absent", "Remote"]].reset_index()
+        return summary
+
+
+# ==============================
+# Sample Data
+# ==============================
+data = [
+    [101, "HR", "2024-06-01", "Present"],
+    [102, "IT", "2024-06-01", "Absent"],
+    [103, "Finance", "2024-06-01", "Present"],
+    [101, "HR", "2024-06-02", "Remote"],
+    [102, "IT", "2024-06-02", "Absent"],
+    [103, "Finance", "2024-06-02", "Present"],
+    [101, "HR", "2024-06-03", "Present"],
+    [102, "IT", "2024-06-03", "Present"],
+    [103, "Finance", "2024-06-03", "Remote"],
+    [104, "Marketing", "2024-06-01", "Absent"],
+    [104, "Marketing", "2024-06-02", "Absent"],
+    [104, "Marketing", "2024-06-03", "Present"]
+]
+
+# ==============================
+# Usage Example
+# ==============================
+analyzer = EmployeeAttendanceAnalyzer()
+
+# 1. Create DataFrame
+df = analyzer.create_attendance_df(data)
+print("Attendance DataFrame:")
+print(df, "\n")
+
+# 2. Monthly Presence Rate
+monthly_rate = analyzer.monthly_presence_rate(df)
+print("Monthly Presence Rate:")
+print(monthly_rate, "\n")
+
+# 3. Add Absence Flag
+df_with_flag = analyzer.add_absence_flag(df.copy())
+print("DataFrame with Absence Flag:")
+print(df_with_flag, "\n")
+
+# 4. Frequent Absentees (threshold = 1)
+frequent_absentees = analyzer.frequent_absentees(df, threshold=1)
+print("Frequent Absentees (threshold = 1):")
+print(frequent_absentees, "\n")
+
+# 5. Department Attendance Summary
+dept_summary = analyzer.department_attendance_summary(df)
+print("Department Attendance Summary:")
+print(dept_summary)
