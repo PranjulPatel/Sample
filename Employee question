@@ -1,0 +1,106 @@
+📌 Problem Statement 
+An organization tracks daily attendance logs for its employees. Each log entry includes the employee ID, department, date, and attendance status (Present/Absent/Leave). Your task is to perform analysis over this attendance data to identify attendance rates, patterns, and departmental summaries. 
+
+✅ DeclareClass 
+class AttendanceAnalyzer:
+No need to use init method
+If needed, follow recommendations:
+def __init__(self):
+pass
+
+📌 Operations 
+✅ 1. Create Attendance DataFrame 
+Converts raw attendance logs into a structured Pandas DataFrame. 
+
+Function Prototype: 
+def create_attendance_df(self, data: list) -> pd.DataFrame: 
+Example Input: 
+
+create_attendance_df([ 
+    [201, "Sales", "2024-06-01", "Present"], 
+    [202, "HR", "2024-06-01", "Absent"], 
+    [201, "Sales", "2024-06-02", "Leave"] 
+]) 
+Expected Output: 
+
+   EmployeeID Department     Date     Attendance 
+0         201     Sales  2024-06-01    Present 
+1         202        HR  2024-06-01     Absent 
+2         201     Sales  2024-06-02      Leave 
+Implementation Flow: 
+💡 Create a DataFrame using columns: ["EmployeeID", "Department", "Date", "Attendance"]. 
+💡 Ensure Date remains as a string (do not convert to datetime). 
+ 
+ 
+✅ 2. Calculate Monthly Attendance Rate per Employee 
+Returns a DataFrame showing percentage of days present per employee per month. 
+Function Prototype: 
+
+def compute_monthly_attendance_rate(self,df: pd.DataFrame) -> pd.DataFrame: 
+Example Input: (Assuming records from June 2024) 
+Expected Output: 
+
+   EmployeeID    Month       Attendance Rate 
+0         201  2024-06             50.0 
+1         202  2024-06              0.0 
+
+Implementation Flow: 
+💡 Extract "Year-Month" from Date using df["Date"].str[:7]. This will remove day and keep rest intact. 
+💡 Group by EmployeeID and Month, count and total days. 
+💡 Create a new df by applying filter over Attendence = Present
+💡 Merge original and Present df
+💡 Compute Attendance Rate = (Present / Total) * 100. 
+ 
+✅ 3. Add Absence Flag Column 
+Adds a column "IsAbsent" with 1 if status is "Absent", else 0. 
+
+Function Prototype: 
+def add_absence_flag(self, df: pd.DataFrame) -> pd.DataFrame: 
+Example Input: 
+add_absence_flag(df) 
+
+Expected Output: 
+   EmployeeID Department      Date   Attendance     IsAbsent 
+0         201     Sales  2024-06-01    Present         0 
+1         202        HR  2024-06-01     Absent         1 
+2         201     Sales  2024-06-02      Leave         0 
+Implementation Flow: 
+💡 Use df["Attendance"] == "Absent" and convert boolean to int. 
+ 
+ 
+ 
+✅ 4. Filter Employees with High Absenteeism 
+Returns a DataFrame of employees with more than n absences. 
+
+Function Prototype: 
+def high_absentees(self, df: pd.DataFrame, threshold: int) -> pd.DataFrame: 
+Example Input: 
+high_absentees(df, 1) 
+
+Expected Output: 
+   EmployeeID      Absence Count 
+0         202              3 
+
+1         203              4 
+Implementation Flow: 
+💡 Filter rows where Attendance is "Absent". 
+💡 Group by EmployeeID and count absences. 
+💡 Return only those with count > threshold.
+ 
+✅ 5. Department-wise Attendance Summary 
+Returns counts of each attendance type per department. 
+Function Prototype: 
+def department_attendance_summary(self, df: pd.DataFrame) -> pd.DataFrame: 
+
+Example Input: 
+department_attendance_summary(df) 
+Expected Output: 
+  Department  Present  Absent  Leave 
+
+0        HR        0       2      1 
+1     Sales        3       1      2 
+Implementation Flow: 
+💡 Implement Crosstab using "Department" and "Attendance" in the input dataframe.
+💡 Set column name to None.
+💡 Use pd.reindex with column argument as [present, absent, leave]. Replace null values with 0.
+💡 reset_index and return the resultant dataframe.
