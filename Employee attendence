@@ -1,0 +1,204 @@
+import pandas as pd
+class AttendanceAnalyzer:
+    def create_attendance_df(self, data: list) -> pd.DataFrame:
+        columns = [
+            "EmployeeID",
+            "Department",
+            "Date",
+            "Attendance"
+        ]
+        df = pd.DataFrame(data, columns=columns)
+        return df
+
+    def compute_monthly_attendance_rate(
+        self,
+        df: pd.DataFrame
+    ) -> pd.DataFrame:
+
+        attendance_df = df.copy()
+        # Extract Year-Month
+        attendance_df["Month"] = (
+            attendance_df["Date"]
+            .str[:7]
+        )
+        # Total days per employee/month
+        total_days = (
+            attendance_df
+            .groupby(
+                ["EmployeeID", "Month"]
+            )
+            .size()
+            .reset_index(name="TotalDays")
+        )
+        # Present days only
+        present_days = (
+            attendance_df[
+                attendance_df["Attendance"] == "Present"
+            ]
+            .groupby(
+                ["EmployeeID", "Month"]
+            )
+            .size()
+            .reset_index(name="PresentDays")
+        )
+        # Merge total and present counts
+        result = pd.merge(
+            total_days,
+            present_days,
+            on=["EmployeeID", "Month"],
+            how="left"
+        )
+        # Replace NaN with 0
+        result["PresentDays"] = (
+            result["PresentDays"]
+            .fillna(0)
+            .astype(int)
+        )
+        # Calculate attendance percentage
+        result["Attendance Rate"] = (
+            result["PresentDays"]
+            / result["TotalDays"]
+            * 100
+        ).round(2)
+
+        return result[
+            [
+                "EmployeeID",
+                "Month",
+                "Attendance Rate"
+            ]
+        ]
+
+    def add_absence_flag(
+        self,
+        df: pd.DataFrame
+    ) -> pd.DataFrame:
+        result = df.copy()
+
+        result["IsAbsent"] = (
+            result["Attendance"] == "Absent"
+        ).astype(int)
+
+        return result
+
+    def high_absentees(
+        self,
+        df: pd.DataFrame,
+        threshold: int
+    ) -> pd.DataFrame:
+
+        absence_df = df[
+            df["Attendance"] == "Absent"
+        ]
+
+        result = (
+            absence_df
+            .groupby("EmployeeID")
+            .size()
+            .reset_index(name="Absence Count")
+        )
+
+        result = result[
+            result["Absence Count"] > threshold
+        ]
+        return result.reset_index(drop=True)
+
+    def department_attendance_summary(
+        self,
+        df: pd.DataFrame
+    ) -> pd.DataFrame:
+
+        summary = pd.crosstab(
+            df["Department"],
+            df["Attendance"]
+        )
+
+        # Remove column header name
+        summary.columns.name = None
+
+        # Ensure all attendance categories exist
+        summary = summary.reindex(
+            columns=[
+                "Present",
+                "Absent",
+                "Leave"
+            ],
+            fill_value=0
+        )
+        return summary.reset_index()
+
+
+# =========================================================
+# DRIVER CODE
+# =========================================================
+
+attendance_data = [
+    [201, "Sales", "2024-06-01", "Present"],
+    [202, "HR", "2024-06-01", "Absent"],
+    [201, "Sales", "2024-06-02", "Leave"],
+    [202, "HR", "2024-06-02", "Absent"],
+    [202, "HR", "2024-06-03", "Leave"],
+    [203, "IT", "2024-06-01", "Absent"],
+    [203, "IT", "2024-06-02", "Absent"],
+    [203, "IT", "2024-06-03", "Absent"],
+    [203, "IT", "2024-06-04", "Absent"],
+    [204, "Sales", "2024-06-01", "Present"],
+    [204, "Sales", "2024-06-02", "Present"]
+]
+
+analyzer = AttendanceAnalyzer()
+
+# ---------------------------------------------------------
+# 1. Create DataFrame
+# ---------------------------------------------------------
+attendance_df = analyzer.create_attendance_df(
+    attendance_data
+)
+
+print("\n===== Attendance Data =====")
+print(attendance_df)
+
+# ---------------------------------------------------------
+# 2. Monthly Attendance Rate
+# ---------------------------------------------------------
+monthly_rate = (
+    analyzer.compute_monthly_attendance_rate(
+        attendance_df
+    )
+)
+
+print("\n===== Monthly Attendance Rate =====")
+print(monthly_rate)
+
+# ---------------------------------------------------------
+# 3. Add Absence Flag
+# ---------------------------------------------------------
+flag_df = analyzer.add_absence_flag(
+    attendance_df
+)
+
+print("\n===== Attendance with Absence Flag =====")
+print(flag_df)
+
+# ---------------------------------------------------------
+# 4. High Absentees
+# ---------------------------------------------------------
+high_absent = analyzer.high_absentees(
+    attendance_df,
+    threshold=1
+)
+
+print("\n===== High Absentees =====")
+print(high_absent)
+
+# ---------------------------------------------------------
+# 5. Department Summary
+# ---------------------------------------------------------
+department_summary = (
+    analyzer.department_attendance_summary(
+        attendance_df
+    )
+)
+
+print("\n===== Department Attendance Summary =====")
+print(department_summary)
